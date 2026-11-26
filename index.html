@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="author" content="FLY">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="樓客">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="description" content="五代亂世，邊鎮渡口的歸雁樓。夜裡來叩門的客人，有些已經不是人了。中式心理恐怖 × 客棧經營，十二夜，多結局。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="樓客">
+<meta property="og:description" content="五代亂世，邊鎮渡口的歸雁樓。夜裡來叩門的客人，有些已經不是人了。中式心理恐怖 × 客棧經營，十二夜，多結局。">
+<meta property="og:url" content="https://flycanfly6686.github.io/LouKe_mobile/">
+<meta property="og:image" content="https://flycanfly6686.github.io/LouKe_mobile/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<title>樓客</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+<div id="stage">
+  <img id="scene" alt="">
+  <div id="figures"></div>
+  <canvas id="fx" width="1280" height="720"></canvas>
+  <div id="lamp"></div>
+
+  <!-- 標題 -->
+  <div id="title-screen" class="layer">
+    <button id="btn-start" class="big">開　門　營　業</button>
+    <button id="btn-load" class="big">讀　取　存　檔</button>
+    <button id="btn-codex" class="big">圖　鑑</button>
+    <button id="btn-title-settings" class="big">設　定</button>
+    <p class="hint">點擊畫面開啟聲音・建議戴耳機</p>
+    <small id="copyright">© 2026 FLY</small>
+  </div>
+
+  <!-- 黑幕旁白 -->
+  <div id="narration" class="layer hidden"><p id="narration-text"></p></div>
+
+  <!-- 對話與行動 -->
+  <div id="hud" class="hidden">
+    <div id="topbar">
+      <span id="night-info"></span>
+      <span id="guest-info"></span>
+      <span id="coins"></span>
+      <span id="food"></span>
+      <span id="mind"></span>
+      <span id="ap"></span>
+      <button id="btn-journal" class="ghost">線索簿</button>
+      <button id="btn-log" class="ghost">紀錄</button>
+      <button id="btn-items" class="ghost">道具</button>
+      <button id="btn-notice" class="ghost">告示</button>
+      <button id="btn-settings" class="ghost">⚙ 設定</button>
+    </div>
+    <div id="dialog">
+      <div id="speaker"></div>
+      <div id="text"></div>
+      <div id="actions"></div>
+    </div>
+  </div>
+
+  <!-- 文件（告示／路引） -->
+  <div id="doc-modal" class="layer hidden">
+    <div id="doc" class="paper"></div>
+    <button id="btn-doc-close" class="big small">收起</button>
+  </div>
+
+  <!-- 通用面板（地圖、商店、道具） -->
+  <div id="panel-modal" class="layer hidden">
+    <div id="panel">
+      <h2 id="panel-title"></h2>
+      <div id="panel-body"></div>
+      <button id="btn-panel-close" class="big small">關閉</button>
+    </div>
+  </div>
+
+  <!-- 結算 -->
+  <div id="result" class="layer hidden">
+    <div class="result-inner">
+      <h1 id="result-title"></h1>
+      <p id="result-desc"></p>
+      <div id="result-rows"></div>
+      <button id="btn-credits" class="big">謝幕</button>
+      <button id="btn-again" class="big">重新開始</button>
+    </div>
+  </div>
+
+  <!-- 片尾字幕 -->
+  <div id="credits" class="layer hidden">
+    <div id="credits-bg"></div>
+    <div id="credits-roll"></div>
+    <div id="credits-end"></div>
+<div id="credits-thanks"></div>
+    <button id="credits-skip">跳過 ›</button>
+    <small id="credits-hint"></small>
+  </div>
+
+  <!-- 確認視窗 -->
+  <div id="confirm" class="layer hidden">
+    <div class="confirm-box">
+      <p id="confirm-text"></p>
+      <div class="confirm-row">
+        <button id="confirm-yes" class="big small">確定</button>
+        <button id="confirm-no" class="big small">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="fade"></div>
+</div>
+
+<script src="mobile.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/town.js"></script>
+<script src="story.js"></script>
+<script src="audio.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

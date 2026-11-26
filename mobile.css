@@ -1,0 +1,78 @@
+/* ============================================================
+   樓客 手機版追加樣式（只在 mobile 打包時加進去，不改 game/style.css）
+   手機橫放：舞台還是 16:9，字和按鈕放大、頂端列收緊
+   ============================================================ */
+
+/* 點擊時不要閃灰框、不要放大、不要跳出長按選單 */
+html, body { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+#stage { width: min(100%, calc((100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 16 / 9)); }
+
+/* iPhone 沒有楷體：用系統的宋體／明體，比黑體接近原本的味道 */
+:root { --kai: "DFKai-SB", "BiauKai", "KaiTi", "STKaiti", "標楷體", "Songti TC", "Songti SC", "STSong", serif; }
+
+/* 觸控裝置沒有「滑鼠移上去」：把 hover 效果關掉，免得點完一直亮著 */
+@media (hover: none) {
+  button.big:hover { background: rgba(2, 14, 13, .7); border-color: var(--teal-line); }
+  button.ghost:hover { color: var(--teal-dim); border-color: var(--teal-line); }
+  #actions button:hover:not(:disabled) { background: rgba(10, 40, 36, .7); border-color: var(--teal-line); }
+  #figures .fig:hover { filter: none; }
+  #actions button:active:not(:disabled), button.big:active, button.ghost:active { background: rgba(30, 90, 80, .85); border-color: var(--teal); }
+}
+
+/* ---- 手機（舞台寬度小於約 1000px）：字級改由這裡決定（蓋過遊戲 JS 設的 1em = 舞台寬 / 80）----
+   用 CSS 而不是 JS，版面一開始就是對的，新手提示的亮框才不會對歪 */
+@media (max-width: 999px), (max-height: 562px) {
+  #stage { font-size: max(10px, calc(min(100vw - env(safe-area-inset-left) - env(safe-area-inset-right), (100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 16 / 9) / 58)) !important; }
+  /* 頂端列分兩行：第一行日期與客人；第二行錢、糧、心神、行動和按鈕（mobile.js 在中間插一個 .br） */
+  #topbar { top: 1.2%; left: 2%; right: 2%; gap: .3em .6em; font-size: .82em; flex-wrap: wrap; white-space: nowrap; }
+  #topbar .br { flex-basis: 100%; height: 0; }
+  #topbar #guest-info { margin-right: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  #topbar #coins { margin-left: auto; }
+  #topbar button.ghost { font-size: .95em; padding: .3em .6em; }
+  #dialog { left: 2%; right: 2%; bottom: 2%; padding: .6em .9em .7em; min-height: 22%; }
+  #speaker { font-size: .9em; margin-bottom: .15em; }
+  #text { font-size: 1.12em; line-height: 1.55; min-height: 2.6em; }
+  #actions { gap: .4em; margin-top: .45em; }
+  #actions button { font-size: .98em; padding: .45em .85em; min-height: 2.3em; }
+  #actions .br { height: .2em; }
+  #actions button.gap { margin-left: 1.6em; }
+  #narration p { font-size: 1.3em; line-height: 1.8; max-width: 34em; padding: 0 1em; }
+  #panel { max-height: 94%; width: 82%; padding: .8em 1.2em 0; -webkit-overflow-scrolling: touch; }
+  #panel h2 { margin-bottom: .4em; }
+  /* 關閉鈕黏在面板底部，不用滑到最下面 */
+  #btn-panel-close { position: sticky; bottom: 0; display: block; width: 100%; margin: 0; box-shadow: 0 -.6em 1em rgba(2, 14, 13, .95); background: rgba(2, 14, 13, .97); }
+  #panel-body { margin-bottom: .6em; }
+  button.big.small { font-size: 1.05em; padding: .5em 1.4em; }
+  #title-screen button.big { font-size: 1.05em; padding: .55em 1.1em; }
+  #figures .fig .tag { font-size: .85em; }
+  #coach { max-width: 26em; font-size: .95em; }
+  #coach button { padding: .45em .9em; }
+  /* 看雙手：頂端列在手機是兩行，台詞和按鈕往下移，不要壓到錢、糧那一行 */
+  #stage.hands-view #dialog { top: 17%; }
+}
+
+#topbar .br { display: none; }
+@media (max-width: 999px), (max-height: 562px) { #topbar .br { display: block; } }
+
+/* ---- 直拿手機：請玩家轉成橫向 ---- */
+#rotate-hint { display: none; }
+@media (orientation: portrait) and (max-width: 900px) {
+  #rotate-hint { display: flex; position: fixed; inset: 0; z-index: 999; background: #000; color: #8fe8d2; flex-direction: column;
+                 align-items: center; justify-content: center; gap: 1.2em; font-family: var(--kai); font-size: 20px; letter-spacing: .2em; text-align: center; }
+  #rotate-hint .phone-icon { width: 46px; height: 80px; border: 3px solid #8fe8d2; border-radius: 8px; animation: rotateHint 2.4s ease-in-out infinite; }
+  #rotate-hint small { font-size: 14px; color: #4d9c8b; letter-spacing: .1em; }
+}
+@keyframes rotateHint { 0%, 25% { transform: rotate(0); } 55%, 80% { transform: rotate(-90deg); } 100% { transform: rotate(0); } }
+
+/* 下載畫面：全部圖片下載完才能玩（mobile.js） */
+#dl-gate { position: fixed; inset: 0; z-index: 900; background: #000; color: #8fe8d2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  font-family: inherit; letter-spacing: .1em; transition: opacity .5s; padding: 0 16px; text-align: center; }
+#dl-gate.done { opacity: 0; pointer-events: none; }
+#dl-gate .dl-title { font-size: 44px; letter-spacing: .4em; color: #e6f7f2; text-shadow: 0 0 18px rgba(80, 200, 180, .5); }
+#dl-gate .dl-bar { width: min(70vw, 460px); height: 6px; background: rgba(80, 140, 130, .25); border: 1px solid rgba(80, 140, 130, .5); }
+#dl-gate .dl-fill { width: 0; height: 100%; background: #8fe8d2; box-shadow: 0 0 10px #8fe8d2; transition: width .2s; }
+#dl-gate .dl-text { font-size: 15px; }
+#dl-gate .dl-note { font-size: 12px; color: #4d9c8b; }
+#dl-gate .dl-retry { margin-top: 6px; padding: 8px 22px; background: transparent; color: #8fe8d2; border: 1px solid #8fe8d2; font: inherit; letter-spacing: .2em; }
+#dl-gate .dl-retry[hidden] { display: none; }
