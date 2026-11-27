@@ -2110,9 +2110,18 @@
     // 親眼看過你釘死畫皮的人，會先站出來替你說話
     const voucher = npcs.find(p => p.vouch && !p.fake);
     if (voucher) await say(name(voucher), S.witness.vouch.replace(/\{w\}/g, name(voucher)), true);
-    const votes = new Map(), accusers = new Map();
+    const isStaff = p => S.people[p.id].kind === "staff";
+    const isMute = p => !!S.mute && p.id === S.mute.id;
+    // 啞姑不會說話：理由裡要「說話」才成立的句子，她用不上
+    const mutefilter = (a, arr) => isMute(a) ? arr.filter(t => !/說話|搭了幾句/.test(t)) : arr;
+    const culprit = G.plot && P(G.plot.culprit);
+    // 真夥計不會平白無故指認同事；除非已經有證據、或已經識破了
+    const canAccuse = (a, p) => a.fake || !isStaff(a) || !isStaff(p) || p.known || (culprit === p && culprit.evidence);
+    const votes = new Map(), accusers = new Map(), defenders = new Map(), spoke = new Set();
     const fakesOf = except => npcs.filter(p => p.fake && p !== except);
-    for (const a of shuffle(npcs).slice(0, 3)) {
+    // ---- 第一輪：指認 ----
+    for (const a of shuffle(npcs).slice(0, Math.random() < 0.5 ? 2 : 3)) {
+      if (spoke.has(a)) continue;   // 已經站出來袒護過的人，不再發言
       let b = null, line = "";
       const others = npcs.filter(p => p !== a);
       if (a.fake) {
@@ -2122,28 +2131,58 @@
         line = freshPick("accuseFake:" + G.night, A_.accuseFake).replace(/\{b\}/g, name(b));
         if (Math.random() < 0.35) line += "\n" + pick(A_.fakeTell).replace(/\{a\}/g, name(a));
       } else {
-        const culprit = G.plot && P(G.plot.culprit);
-        const known = others.find(p => p.known);
-        const grudge = (S.grudges[a.id] || []).map(P).filter(p => p && p.status === "in");
+        const pool = others.filter(p => canAccuse(a, p));
+        const known = pool.find(p => p.known);
+        const grudge = (S.grudges[a.id] || []).map(P).filter(p => p && p.status === "in" && pool.includes(p));
+        const fakes = fakesOf(a).filter(p => pool.includes(p));
         if (culprit && culprit.evidence && culprit.status === "in" && culprit !== a) b = culprit;
         else if (known) b = known;
-        else if (fakesOf(a).length && Math.random() < 0.5) b = pick(fakesOf(a));
+        else if (fakes.length && Math.random() < 0.5) b = pick(fakes);
         else if (grudge.length && Math.random() < 0.6) b = pick(grudge);
-        else if (Math.random() < 0.6) b = pick(others);
+        else if (pool.length && Math.random() < 0.6) b = pick(pool);
         if (!b) continue;
         if (grudge.includes(b) && !b.fake && Math.random() < 0.7) line = pick(A_.grudge).replace(/\{b\}/g, name(b));
         else {
-          const reason = b.fake && Math.random() < 0.6 ? fill(pick(tellsOf(b)), b) : pick(A_.reasons).replace(/\{b\}/g, name(b));
+          const reasons = mutefilter(a, A_.reasons);
+          const reason = b.fake && Math.random() < 0.6 ? fill(pick(mutefilter(a, tellsOf(b))), b) : pick(reasons).replace(/\{b\}/g, name(b));
           const forms = A_.accuseReal.filter(f => !(S.people[a.id].noEyes && f.includes("看見")));
           line = freshPick("accuse:" + G.night, forms).replace(/\{b\}/g, name(b)).replace("{r}", reason);
         }
       }
+      spoke.add(a);
       votes.set(b, (votes.get(b) || 0) + 1);
       accusers.set(b, [...(accusers.get(b) || []), a]);
       await say(name(a), line, true);
+      // ---- 有人站出來袒護：只回應「剛被指認的人」；每場最多兩位 ----
+      if (defenders.size < 2 && !defenders.has(b)) {
+        const cands = npcs.filter(p => !spoke.has(p) && p !== b);
+        let d = null;
+        if (isStaff(b)) d = cands.find(p => !p.fake && isStaff(p) && Math.random() < 0.7);              // 夥計護夥計
+        if (!d && b.fake) d = cands.find(p => p.fake && Math.random() < 0.4);                           // 畫皮護畫皮
+        if (!d) d = cands.find(p => !p.fake && !(S.grudges[p.id] || []).map(P).includes(b) && Math.random() < 0.25);
+        if (d) {
+          spoke.add(d);
+          defenders.set(b, d);
+          const pool = isMute(d) ? A_.defendMute : (isStaff(b) && isStaff(d) ? A_.defendStaff : A_.defendIn);
+          let dl = freshPick("defend:" + G.night + (isMute(d) ? "m" : isStaff(b) && isStaff(d) ? "s" : "g"), pool).replace(/\{a\}/g, name(a)).replace(/\{b\}/g, name(b)).replace(/\{d\}/g, name(d));
+          if (d.fake && Math.random() < 0.35) dl += "\n" + pick(A_.fakeTell).replace(/\{a\}/g, name(d));
+          await say(name(d), dl, true);
+        }
+      }
     }
     if (!votes.size) { await say("", A_.nobody, true); return showLocation(); }
-    const top = [...votes.entries()].sort((x, y) => y[1] - x[1] || Math.random() - 0.5)[0][0];
+    // 袒護的人替被指認者抵一票；票數最高的人才會被議論
+    const net = p => (votes.get(p) || 0) - (defenders.has(p) ? 1 : 0);
+    const best = Math.max(...[...votes.keys()].map(net));
+    if (best <= 0) { await say("", A_.stalemate, true); if (!auto) await showLocation(); return; }
+    const tops = [...votes.keys()].filter(p => net(p) === best);
+    let top = tops[0];
+    if (tops.length > 1) {
+      await say("", A_.tie.replace("{list}", tops.map(name).join("、")), true);
+      const t = await choose("要處理誰？", [...tops.map(p => ({ label: name(p), value: p })), { label: A_.disbandLabel, value: null }]);
+      if (!t) { await say("", A_.disband, true); if (!auto) await showLocation(); return; }
+      top = t;
+    }
     const nb = name(top), C = A_.choices;
     await say("", A_.verdict.replace(/\{b\}/g, nb), true);
     const c = await choose(`要怎麼處理${nb}？`, [
