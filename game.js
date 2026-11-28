@@ -2102,6 +2102,7 @@
   }
 
   // ---------- 大廳議事 ----------
+  const isMuteP = p => !!S.mute && p.id === S.mute.id;
   async function assembly(auto) {
     if (!auto) spend();
     G.assemblyDay = G.night;
@@ -2113,9 +2114,9 @@
     if (npcs.length < 3) { await say("", A_.nobody, true); return showLocation(); }
     // 親眼看過你釘死畫皮的人，會先站出來替你說話
     const voucher = npcs.find(p => p.vouch && !p.fake);
-    if (voucher) await say(name(voucher), S.witness.vouch.replace(/\{w\}/g, name(voucher)), true);
+    if (voucher) await say(name(voucher), (isMuteP(voucher) ? S.mute.vouch : S.witness.vouch).replace(/\{w\}/g, name(voucher)), true);
     const isStaff = p => S.people[p.id].kind === "staff";
-    const isMute = p => !!S.mute && p.id === S.mute.id;
+    const isMute = isMuteP;
     // 啞姑不會說話：理由裡要「說話」才成立的句子，她用不上
     const mutefilter = (a, arr) => isMute(a) ? arr.filter(t => !/說話|搭了幾句/.test(t)) : arr;
     const culprit = G.plot && P(G.plot.culprit);
@@ -3177,7 +3178,7 @@
       if (t === H.none) note(o, "葉姑娘說，聽不到心跳", 1.5);
     }
     else if (p.fake) t = pick(S.askFake);
-    else if (o.fake && Math.random() < 0.6) t = pick(S.askAboutFake);
+    else if (o.fake && Math.random() < 0.6) t = pick(isMuteP(p) ? S.askAboutFake.filter(x => !/說話/.test(x)) : S.askAboutFake);
     else t = (d.opinions && d.opinions[o.id]) || pick(S.opinionsDefault);
     const said = fill(t, p, { b: name(o) });
     G.heard = G.heard || {};
@@ -3295,7 +3296,7 @@
     await say("", fill(S.dispose.expelText, p), true);
     if (ws0) {                                          // 牠已經走了，在場的人用剛剛的名單
       markDisposal("expel");
-      for (const w of shuffle(ws0.filter(w => !w.fake)).slice(0, 2)) await say(name(w), pick(K.expelSee).replace(/\{w\}/g, name(w)), true);
+      for (const w of shuffle(ws0.filter(w => !w.fake)).slice(0, 2)) await say(name(w), pick(isMuteP(w) ? S.mute.seeExpel : K.expelSee).replace(/\{w\}/g, name(w)), true);
     }
     await afterAction(null);
   }
@@ -3425,7 +3426,8 @@
       const slip = w.fake && Math.random() < W.fakeSlip;      // 畫皮的反應不對勁（線索）
       if (slip) note(w, kind === "reveal" ? "看見同伴被揭穿時，反應不對勁" : "看見有人被殺時，反應不對勁", 2);
       let t;
-      if (w.id === "han" && !w.fake && kind === "kill") t = p.fake ? W.hanFake : W.hanReal;
+      if (w.id === S.mute.id && !w.fake && !slip && kind === "kill") t = bonded(w.id, p.id) ? pick(S.mute.seeBond) : pick(p.fake ? S.mute.seeFake : S.mute.seeReal);   // 啞姑不會尖叫、也不會喊
+      else if (w.id === "han" && !w.fake && kind === "kill") t = p.fake ? W.hanFake : W.hanReal;
       else if (!w.fake && bonded(w.id, p.id) && kind === "kill") t = p.fake ? W.bondFake : W.bondReal;
       else if (kind === "reveal") t = slip ? pick(W.fakeSeeReveal) : w.id === S.mute.id ? S.mute.reveal : (S.seeReveal[w.id] || pick(W.realSeeReveal));
       else if (slip) t = pick(p.fake ? W.fakeSeeFake : W.fakeSeeReal);
