@@ -1030,7 +1030,11 @@
       lines.push("三更時分，走廊上傳來拖行的聲音。\n有扇門開了，又關上。", "之後，什麼聲音也沒有了。");
       G.sanity -= 5;
     } else if (active().length && Math.random() < 0.7) {
-      lines.push(pick(S.nightEvents).replace(/\{n\}/g, name(pick(active()))));
+      const who = pick(active());
+      let ev = pick(S.nightEvents);
+      // 啞姑不會說話：說話聲、開口回答的動靜，換成她自己的版本
+      if (S.mute && who.id === S.mute.id && /說話聲|「睡不著」/.test(ev)) ev = pick(S.mute.nightQuiet);
+      lines.push(ev.replace(/\{n\}/g, name(who)));
     } else {
       lines.push("這一夜，歸雁樓很安靜。\n只有雨聲。");
     }
