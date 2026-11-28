@@ -70,6 +70,7 @@
     host.appendChild(mark);
     return new Promise(res => { waiter = () => { waiter = null; mark.remove(); res(); }; });
   }
+  const clearMarks = () => document.querySelectorAll("#dialog .next, #narration .next").forEach(m => m.remove());   // 重置畫面後，不要留下沒人在等的 ▼
   function advance() { if (typer) typer.finish(); else if (waiter) waiter(); }
   $("dialog").addEventListener("click", advance);
   $("narration").addEventListener("click", advance);
@@ -1871,6 +1872,7 @@
     if (!G.out) return showLocation(text);              // 已經回到樓裡：不要把鎮上的畫面疊上來
     ensureScene(G.townAt ? townBg(G.townAt) : "town_map.jpg");
     waitingSay = 0;
+    if (!waiter) clearMarks();
     renderFigures();
     if (!G.townAt) {
       const noAp = G.ap <= 0;
@@ -2915,6 +2917,7 @@
     if (G.out) return showTown(text);
     await staleTasks();
     waitingSay = 0;                                  // 回到可以自由操作的畫面：保險起見歸零
+    if (!waiter) clearMarks();
     ensureScene(`loc_${G.loc}.jpg`);
     const here = renderFigures();
     const L = S.locations[G.loc];
@@ -4027,7 +4030,7 @@
   function resetFlow() {
     session++;
     if (typer) clearTimeout(typer.t);
-    typer = null; waiter = null; docClose = null; idle = false; waitingSay = 0;
+    typer = null; waiter = null; docClose = null; idle = false; waitingSay = 0; clearMarks();
     if (confirmResolve) { confirmResolve = null; }
     ["narration", "doc-modal", "panel-modal", "confirm", "result", "hud"].forEach(id => $(id).classList.add("hidden"));
     $("fade").classList.remove("on");
